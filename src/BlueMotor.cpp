@@ -116,7 +116,7 @@ void Bluemotor::reset()
 
 //moves the mover a certion amount depening on the position input
 void Bluemotor::moveTo(long position)
-{ //initlizes a Bluemotor varabvle and grabs the current posiotn of the encoder
+{ //initlizes a Bluemotor varible and grabs the current posiotn of the encoder
     Bluemotor blue;
     noInterrupts();
     long spot = blue.getPosition();

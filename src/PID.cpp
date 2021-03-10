@@ -1,8 +1,9 @@
 #include "PID.h"
+#include <Romi32U4.h>
 
-PID::PID(double dt, double max, double min, double Kp, double Kd, double Ki)
+PID::PID(double max, double min, double Kp, double Kd, double Ki)
 {
-    _dt = dt;
+    // Inits all error coefficients for the PID
     _max = max;
     _min = min;
     _Kp = Kp;
@@ -14,6 +15,10 @@ PID::~PID() {}
 
 double PID::calculate(double setpoint, double pv)
 {
+    // Get dt
+    now = millis();
+    long _dt = now - _last_time;
+
     // Calculate error
     double error = setpoint - pv;
 
@@ -39,6 +44,9 @@ double PID::calculate(double setpoint, double pv)
 
     // Save error to previous error
     _pre_error = error;
+
+    // Update time
+    _last_time = now;
 
     return output;
 }

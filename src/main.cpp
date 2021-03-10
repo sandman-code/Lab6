@@ -21,6 +21,12 @@ void setup()
 
 void loop()
 {
+  for (int i = 0; i < 400; i++)
+  {
+    motor.setEffort(i);
+    Serial.println(i);
+  }
+  /*
   if (pb.isPressed())
   {
     newt = millis() / 1000;
@@ -42,4 +48,5 @@ void loop()
     motor.setEffort(0);
     motor.reset();
   }
+  */
 }
