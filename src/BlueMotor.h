@@ -8,6 +8,7 @@ class Bluemotor
 public:
     void initilize();
     void setEffort(int effort);
+    void setEffortWithoutDB(int effort);
     void moveTo(long position);
     long getPosition();
     void reset();
@@ -17,6 +18,7 @@ public:
 private:
     Romi32U4Motors motors;
     void setEffort(int effort, bool clockwise);
+    void setEffortWithoutDB(int effort, bool clockwise);
     static void isr();
     const unsigned PWM = 11;
     const int AIN2 = 4;

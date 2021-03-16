@@ -3,7 +3,7 @@ class PID
 public:
     PID(double max, double min, double Kp, double Kd, double Ki);
     ~PID();
-    double calculate(double setpoint, double pv);
+    double calculate(long setpoint, long pv);
     unsigned long now;
 
 private:

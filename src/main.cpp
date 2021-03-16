@@ -1,15 +1,18 @@
 #include <Bluemotor.h>
 #include <Arduino.h>
 #include <Romi32U4.h>
+#include "PID.h"
+
 Romi32U4ButtonB pb;
 
 Romi32U4Motors motors;
+
+PID controlPID(400.0, 0.0, 0.05, 5.0, 3.0);
 
 Bluemotor motor;
 long oldReading = 0;
 long newReading = 0;
 long old = 0;
-unsigned long time = 5;
 float newt = 0;
 long freq = 0;
 
@@ -21,10 +24,17 @@ void setup()
 
 void loop()
 {
+  //Part 1
   for (int i = 0; i < 400; i++)
   {
     motor.setEffort(i);
     Serial.println(i);
+  }
+
+  //Part 2
+  if (millis() % 10 == 0)
+  {
+    motor.setEffortWithoutDB((int)controlPID.calculate(1000.0, motor.getPosition()));
   }
   /*
   if (pb.isPressed())

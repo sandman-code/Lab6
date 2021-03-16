@@ -13,7 +13,7 @@ PID::PID(double max, double min, double Kp, double Kd, double Ki)
 
 PID::~PID() {}
 
-double PID::calculate(double setpoint, double pv)
+double PID::calculate(long setpoint, long pv)
 {
     // Get dt
     now = millis();

@@ -1,10 +1,11 @@
-#include "Bluemotor.h"
+#include "BlueMotor.h"
 #include <Romi32U4.h>
 // variables for the counter of controlling the encoder
 const char X = 5;
 int errorCount = 0;
 int oldValue = 0;
 long count = 0;
+const int DBdiff = 40;
 char encoderArray[4][4] = {
     {0, 1, -1, X},
     {-1, 0, X, 0},
@@ -102,6 +103,20 @@ void Bluemotor::setEffort(int effort)
     }
 }
 
+void Bluemotor::setEffortWithoutDB(int effort)
+{
+
+    //turn clockwise
+    if (effort < 0)
+    {
+        setEffortWithoutDB(-effort, true);
+    }
+    //turn counterclockwise or stop
+    else
+    {
+        setEffortWithoutDB(effort, false);
+    }
+}
 //reports back the position of the motor
 long Bluemotor::getPosition()
 {
@@ -112,6 +127,34 @@ long Bluemotor::getPosition()
 void Bluemotor::reset()
 {
     count = 0;
+}
+
+void Bluemotor::setEffortWithoutDB(int effort, bool clockwise)
+{
+    //turn clockwise
+    if (clockwise)
+    {
+        digitalWrite(AIN1, HIGH);
+        digitalWrite(AIN2, LOW);
+    }
+
+    //do not turn
+    else if (effort == 0)
+    {
+        digitalWrite(AIN1, LOW);
+        digitalWrite(AIN2, LOW);
+    }
+
+    //turn counter clockwise
+    else
+    {
+        digitalWrite(AIN1, LOW);
+        digitalWrite(AIN2, HIGH);
+    }
+
+    //validaadates the effort number and sends a PWM to the motor
+    int value = constrain(effort + DBdiff, 0, 400);
+    OCR1C = value;
 }
 
 //moves the mover a certion amount depening on the position input
