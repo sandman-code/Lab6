@@ -1,12 +1,12 @@
+#pragma
+
 class PID
 {
 public:
     PID(double max, double min, double Kp, double Kd, double Ki);
     ~PID();
-    double calculate(long setpoint, long pv);
+    long calculate(long setpoint, long pv);
     unsigned long now;
-
-private:
     double _max;
     double _min;
     double _Kp;
@@ -15,4 +15,6 @@ private:
     unsigned long _last_time;
     double _pre_error;
     double _integral;
+    long lastError = 0;
+    long previousTime = 0;
 };

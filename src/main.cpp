@@ -1,62 +1,193 @@
-#include <Bluemotor.h>
 #include <Arduino.h>
+#include <gripper.h>
+//#include <servo32u4.h>
 #include <Romi32U4.h>
-#include "PID.h"
+#include <LineTrackSensor.h>
+#include <Distance.h>
+#include <Bluemotor.h>
+#include "IRdecoder.h"
+#include <Chassis.h>
+#include <Romi32U4Encoders.h>
+#include <RemoteConstants.h>
+using namespace std;
 
-Romi32U4ButtonB pb;
-
+IRDecoder decoder(14);
+gripper Servo1;
+LineTrackSensor line;
+Distance far;
+Bluemotor blue;
 Romi32U4Motors motors;
+Chassis move;
+Romi32U4Encoders encoder;
 
-PID controlPID(400.0, 0.0, 0.05, 5.0, 3.0);
+bool volUpPressed = false;
+bool volPlusPressed = false;
+bool moved = false;
+bool leftRight = true;
 
-Bluemotor motor;
-long oldReading = 0;
-long newReading = 0;
-long old = 0;
-float newt = 0;
-long freq = 0;
+void checkRemote()
+{
+  int16_t code = decoder.getKeyCode();
+  switch (code)
+  {
+  case remoteVolMinus:
+    volUpPressed = true;
+    Servo1.operate(true);
+    move.turnAngle(180);
+    break;
+
+  case remoteVolPlus:
+    volPlusPressed = true;
+    break;
+  case remote0:
+    move.pauseDriving();
+    line.pause();
+    break;
+
+  case remote1:
+    move.resumeDriving();
+    line.resume();
+    break;
+  }
+}
+
+enum States
+{
+  setUp,
+  turnAround,
+  follow,
+  corner,
+  goBlock,
+  dropOff,
+  release,
+  forward45,
+  forward25,
+  arm45,
+  arm25,
+  grab45,
+  grab25,
+  backUp,
+  pickUp
+
+} states;
+
+void collect(int go)
+{
+  line.goal = 130;
+  states = forward45;
+  Servo1.operate(false);
+  switch (states)
+  {
+
+  case forward45:
+    line.follow();
+    if (far.getDistance() >= 200)
+    {
+      states = grab45;
+    }
+    break;
+  case grab45:
+    Servo1.operate(true);
+
+    break;
+  }
+}
+
+/*
+void path(int goTo)
+{
+  if (goTo == 0)
+  {
+    line.goal = 27;
+    leftRight = false;
+  }
+  switch (states)
+  {
+  case setUp:
+    checkRemote();
+    if (volUpPressed)
+    {
+      states = turnAround;
+      volUpPressed = false;
+    }
+    break;
+  case (turnAround):
+    if (move.doneDriving())
+    {
+      states = follow;
+      move.pauseDriving();
+      delay(1000);
+    }
+    break;
+  case (follow):
+    line.follow();
+    if (line.checkStopped())
+    {
+      states = corner;
+      delay(1000);
+    }
+    break;
+  case (corner):
+    if (move.turnLeftRight(leftRight))
+    {
+      states = goBlock;
+    }
+    break;
+  case goBlock:
+    line.follow();
+    break;
+  case dropOff:
+    blue.home();
+    checkRemote();
+    if (volPlusPressed)
+    {
+      Servo1.operate();
+      volPlusPressed = false;
+      states = pickUp;
+    }
+    break;
+  case pickUp:
+    checkRemote();
+    if (volPlusPressed)
+    {
+      Servo1.operate();
+      volPlusPressed = false;
+      states = backUp;
+    }
+    break;
+  case backUp:
+    move.turnAngle(180);
+    line.follow();
+    if (line.checkStopped())
+    {
+      move.turnAngle(90);
+    }
+    break;
+  }
+}
+*/
 
 void setup()
 {
   Serial.begin(9600);
-  motor.initilize(); // put your setup code here, to run once:
+  Servo1.initilize();
+  far.initilize();
+  blue.initilize();
+  states = setUp;
+  decoder.init();
 }
-
 void loop()
 {
-  //Part 1
-  for (int i = 0; i < 400; i++)
-  {
-    motor.setEffort(i);
-    Serial.println(i);
-  }
+  //blue.home();
+  //collect(96);
+  //blue.home();
+  //blue.moveTo(3600);
+  //Servo1.operate(false);
+  //blue.goToRelease();
+  //blue.home();
 
-  //Part 2
-  if (millis() % 10 == 0)
-  {
-    motor.setEffortWithoutDB((int)controlPID.calculate(1000.0, motor.getPosition()));
-  }
-  /*
-  if (pb.isPressed())
-  {
-    newt = millis() / 1000;
-    newReading = motor.getPosition();
-    freq = (newReading - oldReading) / (newt - old);
-    unsigned long endTime = millis() + 100;
-    motor.setEffort(200); // effort test value
-    Serial.println(motor.getPosition());
-    Serial.println(millis());
-    Serial.println((freq * 60) / 540);
-    Serial.println();
-    while (millis() < endTime)
-      ;
-  }
-  else
-  {
-    old = millis() / 1000;
-    oldReading = motor.getPosition();
-    motor.setEffort(0);
-    motor.reset();
-  }
-  */
+  blue.home();
+  // path(0);
+
+  //move.turnAngle(-90);
 }

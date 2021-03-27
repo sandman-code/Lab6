@@ -1,5 +1,6 @@
 #include "BlueMotor.h"
 #include <Romi32U4.h>
+#include <PID.h>
 // variables for the counter of controlling the encoder
 const char X = 5;
 int errorCount = 0;
@@ -18,7 +19,9 @@ enum States
     clockwise,
     counterclockwise,
     stop
-} state;
+} armState;
+
+PID controlPID(400.0, -400.0, 25, 20, 10);
 
 //initilizes all the pins and the interupts
 void Bluemotor::initilize()
@@ -31,19 +34,19 @@ void Bluemotor::initilize()
     motors.setEfforts(0, 0);
 
     //interupts to count the encoder
-    pinMode(0, INPUT);
-    pinMode(1, INPUT);
-    attachInterrupt(digitalPinToInterrupt(0), isr, CHANGE);
-    attachInterrupt(digitalPinToInterrupt(1), isr, CHANGE);
+    pinMode(2, INPUT);
+    pinMode(3, INPUT);
+    attachInterrupt(digitalPinToInterrupt(2), isr, CHANGE);
+    attachInterrupt(digitalPinToInterrupt(3), isr, CHANGE);
 
     //initlize the differnt states
-    state = Start;
+    armState = Start;
 };
 
 //The intrupt service routune
 void Bluemotor::isr()
 { //shifts the bits left deping on the reading of the second pin, looks up the value in the array
-    int newValue = (digitalRead(1) << 1) | digitalRead(0);
+    int newValue = (digitalRead(3) << 1) | digitalRead(2);
     char value = encoderArray[oldValue][newValue];
 
     //if the number changed add or subtract, or if the value did not change add add one to errorcount
@@ -154,58 +157,39 @@ void Bluemotor::setEffortWithoutDB(int effort, bool clockwise)
 
     //validaadates the effort number and sends a PWM to the motor
     int value = constrain(effort + DBdiff, 0, 400);
+    Serial.println(value);
     OCR1C = value;
 }
 
 //moves the mover a certion amount depening on the position input
 void Bluemotor::moveTo(long position)
 { //initlizes a Bluemotor varible and grabs the current posiotn of the encoder
+    setEffortWithoutDB(controlPID.calculate(position, getPosition()));
+}
+
+void Bluemotor::goToRelease()
+{
+    moveTo(7250);
+}
+
+void Bluemotor::goTo45()
+{
+    moveTo(3590);
+}
+
+void Bluemotor::goTo25()
+{
+    moveTo(7260);
+}
+
+void Bluemotor::home()
+{
     Bluemotor blue;
-    noInterrupts();
-    long spot = blue.getPosition();
-    interrupts();
-
-    //all the cases for the moving the motor
-    switch (state)
-    {
-        //initally moves the motor clockwise our counter clockwise
-    case Start:
-        //moves the motor clockwise
-        if (position > 0)
-        {
-            blue.setEffort(-200);
-            state = clockwise;
-        }
-
-        //moves the motor counterclockwise
-        else
-        {
-            blue.setEffort(200);
-            state = counterclockwise;
-        }
-        //reset the encoder position
-        blue.reset();
-        spot = blue.getPosition();
-        break;
-
-        //if the motor reached its position will call stop
-    case clockwise:
-        if (spot >= position)
-        {
-            state = stop;
-        }
-        break;
-    case counterclockwise:
-        if (spot <= position)
-        {
-            state = stop;
-        }
-        break;
-
-        //stops the motor and prepares the function if called again
-    case stop:
+    if (digitalRead(limit))
         blue.setEffort(0);
-        blue.reset();
-        state = Start;
+    else
+    {
+        blue.setEffort(-200);
     }
+    count = 0;
 }
